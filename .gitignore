@@ -1,0 +1,33 @@
+# Build outputs
+bin/
+build/
+html/
+
+# Compiler specific files
+*.pdb
+
+# IDE and editor files
+compile_commands.json
+.vscode/
+.cache/
+.idea/
+.vs/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.egg-info/
+*.pyc
+*.pyo
+
+# Syncthing
+.stignore
+.stfolder/
+
+# System
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
