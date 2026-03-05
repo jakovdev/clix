@@ -62,7 +62,6 @@
  * @include progress.h
  */
 
-#pragma once
 #ifndef PROGRESS_H
 #define PROGRESS_H
 
@@ -115,23 +114,19 @@ bool progress_end(void);
 extern bool progress_disable;
 #endif
 
-#ifdef PROGRESS_IMPLEMENTATION
+#endif /* PROGRESS_H */
+#if defined(PROGRESS_IMPLEMENTATION) && !defined(PROGRESS_IMPLEMENTED)
+#define PROGRESS_IMPLEMENTED
 
 #include <stdalign.h>
 #include <stdatomic.h>
 #include <threads.h>
 
 #ifdef PROGRESS_CLIX_ARGS
-#ifdef ARGS_IMPLEMENTATION
-#undef ARGS_IMPLEMENTATION
-#endif /* ARGS_IMPLEMENTATION */
 #include PROGRESS_CLIX_ARGS
-#endif /* PROGRESS_CLIX_ARGS */
+#endif
 
 #ifdef PROGRESS_CLIX_PRINT
-#ifdef PRINT_IMPLEMENTATION
-#undef PRINT_IMPLEMENTATION
-#endif /* PRINT_IMPLEMENTATION */
 #include PROGRESS_CLIX_PRINT
 #define progress_dev(...) pdev(__VA_ARGS__)
 #define progress_err(...) perr(__VA_ARGS__)
@@ -290,8 +285,6 @@ ARGUMENT(disable_progress) = {
 #endif
 
 #endif /* PROGRESS_IMPLEMENTATION */
-
-#endif /* PROGRESS_H */
 
 /*
 progress.h

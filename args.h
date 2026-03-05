@@ -99,7 +99,6 @@
  * @endif
  */
 
-#pragma once
 #ifndef ARGS_H
 #define ARGS_H
 
@@ -405,9 +404,9 @@ bool args_parse(int argc, char *argv[]);
  * @brief Execution policy for @ref argument::validate_phase and @ref argument::action_phase.
  */
 enum arg_callback_phase {
+	ARG_CALLBACK_ALWAYS, /**< Run regardless of user input state. */
 	ARG_CALLBACK_IF_SET, /**< Run only when the argument was provided. */
 	ARG_CALLBACK_IF_UNSET, /**< Run only when the argument was not provided. */
-	ARG_CALLBACK_ALWAYS, /**< Run regardless of user input state. */
 };
 
 /** @} */
@@ -912,8 +911,52 @@ struct argument {
 };
 
 /** @} */
+/** @cond ARGS_INTERNALS */
 
-#ifdef ARGS_IMPLEMENTATION
+/** @ingroup args_internals
+ * @brief Internal registration entry point used by @ref ARGUMENT.
+ * @warning Prefer @ref ARGUMENT for all public usage.
+ */
+void _args_register(struct argument *);
+
+#ifdef __cplusplus
+#define _ARGS_CONSTRUCTOR(f) \
+	static void f(void); \
+	struct f##_t_ {      \
+		f##_t_(void) \
+		{            \
+			f(); \
+		}            \
+	};                   \
+	static f##_t_ f##_;  \
+	static void f(void)
+#elif defined(_MSC_VER) && !defined(__clang__)
+#pragma section(".CRT$XCU", read)
+#define _ARGS_CONSTRUCTOR2_(f, p)                                \
+	static void f(void);                                     \
+	__declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
+	__pragma(comment(linker, "/include:" p #f "_")) static void f(void)
+#ifdef _WIN64
+#define _ARGS_CONSTRUCTOR(f) _ARGS_CONSTRUCTOR2_(f, "")
+#else /* _WIN32 */
+#define _ARGS_CONSTRUCTOR(f) _ARGS_CONSTRUCTOR2_(f, "_")
+#endif
+#else /* GCC, Clang */
+/** @ingroup args_internals
+ * @brief Constructor abstraction for GCC/Clang/MSVC registration hooks.
+ * @hideinitializer
+ * @see https://stackoverflow.com/questions/1113409/attribute-constructor-equivalent-in-vc
+ */
+#define _ARGS_CONSTRUCTOR(f)                              \
+	static void f(void) __attribute__((constructor)); \
+	static void f(void)
+#endif
+
+/** @endcond */
+
+#endif /* ARGS_H */
+#if defined(ARGS_IMPLEMENTATION) && !defined(ARGS_IMPLEMENTED)
+#define ARGS_IMPLEMENTED
 
 /** @addtogroup args_customizable
  * @brief Customization points for overriding default behaviors.
@@ -959,6 +1002,10 @@ struct argument {
 /** @name Error Handling */
 /** @{ */
 
+#if defined(ARGS_CLIX_PRINT) && !defined(args_pe)
+#include ARGS_CLIX_PRINT
+#define args_pe perr
+#endif
 #ifndef args_pe
 /** @ingroup args_customizable
  * @brief Error print.
@@ -968,6 +1015,10 @@ struct argument {
 #endif
 
 #ifndef NDEBUG /* DEBUG */
+#if defined(ARGS_CLIX_PRINT) && !defined(args_pd)
+#include ARGS_CLIX_PRINT
+#define args_pd pdev
+#endif
 #ifndef args_pd
 /** @ingroup args_customizable
  * @brief Developer-only debug print.
@@ -983,6 +1034,10 @@ struct argument {
 #define args_pd(...)
 #endif /* NDEBUG */
 
+#if defined(ARGS_CLIX_PRINT) && !defined(args_pi)
+#include ARGS_CLIX_PRINT
+#define args_pi(arg) perr("Internal error for %s", arg_str(arg))
+#endif
 #ifndef args_pi
 /** @ingroup args_customizable
  * @brief Internal error print, user-facing dev print.
@@ -991,6 +1046,10 @@ struct argument {
 #define args_pi(arg) args_pe("Internal error for %s", arg_str(arg))
 #endif
 
+#if defined(ARGS_CLIX_PRINT) && !defined(args_abort)
+#include ARGS_CLIX_PRINT
+#define args_abort pabort
+#endif
 #ifndef args_abort
 /** @ingroup args_customizable
  * @brief Abort function.
@@ -1010,53 +1069,6 @@ struct argument {
 #endif
 
 /** @} */
-
-#endif /* ARGS_IMPLEMENTATION */
-
-/** @cond ARGS_INTERNALS */
-
-/** @ingroup args_internals
- * @brief Internal registration entry point used by @ref ARGUMENT.
- * @warning Prefer @ref ARGUMENT for all public usage.
- */
-void _args_register(struct argument *);
-
-#ifdef __cplusplus
-#define _ARGS_CONSTRUCTOR(f) \
-	static void f(void); \
-	struct f##_t_ {      \
-		f##_t_(void) \
-		{            \
-			f(); \
-		}            \
-	};                   \
-	static f##_t_ f##_;  \
-	static void f(void)
-#elif defined(_MSC_VER) && !defined(__clang__)
-#pragma section(".CRT$XCU", read)
-#define _ARGS_CONSTRUCTOR2_(f, p)                                \
-	static void f(void);                                     \
-	__declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
-	__pragma(comment(linker, "/include:" p #f "_")) static void f(void)
-#ifdef _WIN64
-#define _ARGS_CONSTRUCTOR(f) _ARGS_CONSTRUCTOR2_(f, "")
-#else /* _WIN32 */
-#define _ARGS_CONSTRUCTOR(f) _ARGS_CONSTRUCTOR2_(f, "_")
-#endif
-#else /* GCC, Clang */
-/** @ingroup args_internals
- * @brief Constructor abstraction for GCC/Clang/MSVC registration hooks.
- * @hideinitializer
- * @see https://stackoverflow.com/questions/1113409/attribute-constructor-equivalent-in-vc
- */
-#define _ARGS_CONSTRUCTOR(f)                              \
-	static void f(void) __attribute__((constructor)); \
-	static void f(void)
-#endif
-
-/** @endcond */
-
-#ifdef ARGS_IMPLEMENTATION
 /** @cond ARGS_INTERNALS */
 /** @addtogroup args_internals
  * @{
@@ -1964,12 +1976,7 @@ ARGUMENT(help) = {
 
 /** @} */
 /** @endcond */
-
-#else
-
 #endif /* ARGS_IMPLEMENTATION */
-
-#endif /* ARGS_H */
 
 /*
 args.h

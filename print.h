@@ -87,7 +87,6 @@
  * print_stream_err(stderr);
  */
 
-#pragma once
 #ifndef PRINT_H
 #define PRINT_H
 
@@ -227,7 +226,23 @@ extern bool print_quiet;
 extern bool print_nodetail;
 #endif
 
-#ifdef PRINT_IMPLEMENTATION
+#undef P_RESTRICT
+#endif /* PRINT_H */
+#if defined(PRINT_IMPLEMENTATION) && !defined(PRINT_IMPLEMENTED)
+#define PRINT_IMPLEMENTED
+
+#ifdef __cplusplus
+#if defined(_MSC_VER) && !defined(__clang__)
+#define P_RESTRICT __restrict
+#else /* G++, Clang++ */
+#define P_RESTRICT __restrict__
+#endif /* MSVC C++ */
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#define P_RESTRICT restrict
+#else
+/* While restrict is optional, snprintf and vsnprintf are required */
+#error "Please compile with C99 or later standard"
+#endif
 
 #include <errno.h>
 #include <limits.h>
@@ -236,9 +251,6 @@ extern bool print_nodetail;
 #include <string.h>
 
 #ifdef PRINT_CLIX_ARGS
-#ifdef ARGS_IMPLEMENTATION
-#undef ARGS_IMPLEMENTATION
-#endif /* ARGS_IMPLEMENTATION */
 #include PRINT_CLIX_ARGS
 #endif /* PRINT_CLIX_ARGS */
 
@@ -1176,6 +1188,8 @@ enum p_return input(P_INPUT in, size_t size, const char *P_RESTRICT fmt, ...)
 	return PRINT_SUCCESS;
 }
 
+#undef P_RESTRICT
+
 #ifdef PRINT_CLIX_ARGS
 #ifdef PRINT_CLIX_ARGS_D_ENABLE
 #ifndef PRINT_CLIX_ARGS_D_HELP
@@ -1263,9 +1277,6 @@ ARGUMENT(print_verbose) = {
 #endif /* PRINT_CLIX_ARGS_V_ENABLE */
 #endif /* PRINT_CLIX_ARGS */
 #endif /* PRINT_IMPLEMENTATION */
-
-#undef P_RESTRICT
-#endif /* PRINT_H */
 
 /*
 print.h
