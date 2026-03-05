@@ -6,6 +6,7 @@ on:
   push:
     branches: ["main"]
     paths:
+      - '.github/workflows/docs.yml'
       - 'docs/Doxyfile'
       - 'docs/DoxygenLayout.xml'
       - 'README.md'
