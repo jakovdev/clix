@@ -58,6 +58,7 @@
  * ARGUMENT(my_flag) = {
  *     .set = &my_flag,
  *     .action_callback = print_my_flag,
+ *     .action_phase = ARG_CALLBACK_IF_SET,
  *     .help = "Enable my flag",
  *     .lopt = "my-flag",
  *     .opt = 'f',
@@ -810,6 +811,7 @@ struct argument {
 	 *     ...
 	 *     .set = &verbose,
 	 *     .action_callback = print_verbose,
+	 *     .action_phase = ARG_CALLBACK_IF_SET,
 	 *     ...
 	 * };
 	 * @endcode
