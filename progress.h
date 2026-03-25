@@ -122,26 +122,43 @@ extern bool progress_disable;
 #include <stdatomic.h>
 #include <threads.h>
 
-#ifdef PROGRESS_PRINT_H
+#ifndef PROGRESS_PRINT_H
+#define PROGRESS_PRINT_H 0
+#include <stdio.h>
+#else
 #ifndef PRINT_H
 #error "Include print.h before including progress.h"
 #endif /* PRINT_H */
+#undef PROGRESS_PRINT_H
+#define PROGRESS_PRINT_H 1
 #endif /* PROGRESS_PRINT_H */
 
-#ifdef PROGRESS_PRINT_H
-#define progress_dev(...) pdev(__VA_ARGS__)
-#define progress_err(...) perr(__VA_ARGS__)
-#else
-#include <stdio.h>
+#ifndef progress_bar
+#if !PROGRESS_PRINT_H
 #define progress_bar(pct, ...)           \
 	do {                             \
 		printf("\r%3d%% ", pct); \
 		printf(__VA_ARGS__);     \
 		fflush(stdout);          \
 	} while (0)
-#define progress_dev(...) fprintf(stderr, __VA_ARGS__)
+#endif /* progress_bar is a function */
+#endif /* progress_bar */
+
+#ifndef progress_err
+#if PROGRESS_PRINT_H
+#define progress_err(...) perr(__VA_ARGS__)
+#else /* Default */
 #define progress_err(...) fprintf(stderr, __VA_ARGS__)
 #endif /* PROGRESS_PRINT_H */
+#endif /* progress_err */
+
+#ifndef progress_dev
+#if PROGRESS_PRINT_H
+#define progress_dev(...) pdev(__VA_ARGS__)
+#else /* Default */
+#define progress_dev(...) fprintf(stderr, __VA_ARGS__)
+#endif /* PROGRESS_PRINT_H */
+#endif /* progress_dev */
 
 static _Thread_local size_t t_done;
 

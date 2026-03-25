@@ -2583,15 +2583,13 @@ INCLUDE_FILE_PATTERNS  =
 
 PREDEFINED             = ARGS_EXTERN_ARGR \
                          ARGS_IMPLEMENTATION \
-                         ARGS_PRINT_H \
                          PRINT_EXTERN_FORCE \
                          PRINT_EXTERN_VERBOSE \
                          PRINT_EXTERN_QUIET \
                          PRINT_EXTERN_NODETAIL \
                          PRINT_IMPLEMENTATION \
                          PROGRESS_EXTERN_DISABLE \
-                         PROGRESS_IMPLEMENTATION \
-                         PROGRESS_PRINT_H
+                         PROGRESS_IMPLEMENTATION
 
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this

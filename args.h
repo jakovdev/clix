@@ -13,6 +13,7 @@
  * Correctness depends on constructor attribute support (GCC/Clang) or 
  * .CRT$XCU sections (MSVC) executing registration hooks before @c main.
  *
+ * @attention WIP, only supports options.
  * @note Partial C++ support due to struct field declaration order.
  * Most macros will break because they don't take this into account.
  * You can manually initialize fields which should make it work like in C.
@@ -1028,85 +1029,91 @@ void _args_register(struct argument *);
 #error ARGS_HELP_OFFSET must be at least 1 for proper formatting
 #endif
 
-#ifdef ARGS_PRINT_H
-#undef ARGS_PRINT_H
+#ifndef ARGS_PRINT_H
 /** @ingroup args_customizable
  * @brief Allow using print.h functions for args_pe, args_pd, args_pi and args_abort.
  * @remark Define @ref ARGS_PRINT_H and include @ref print.h before including @ref args.h.
+ * @hideinitializer
  */
-#define ARGS_PRINT_H
+#define ARGS_PRINT_H 0
+#else
 #ifndef PRINT_H
 #error "Include print.h before including args.h"
 #endif /* PRINT_H */
+#undef ARGS_PRINT_H
+#define ARGS_PRINT_H 1
 #endif /* ARGS_PRINT_H */
 
-#if defined(ARGS_PRINT_H) && !defined(args_po)
-/* Disabled for now */
-/* #define args_po print */
-#endif
 #ifndef args_po
+/* Disabled for now 
+#if ARGS_PRINT_H
+#define args_po print
+#else Default */
 /** @ingroup args_customizable
  * @brief Normal print.
  * @remark Overridable before including @ref args.h.
  */
-#define args_po(...) fprintf(stdout, __VA_ARGS__)
-#endif
+#define args_po(...) printf(__VA_ARGS__)
+/* #endif ARGS_PRINT_H */
+#endif /* args_po */
 
 /** @} */
 /** @name Error Handling */
 /** @{ */
 
-#if defined(ARGS_PRINT_H) && !defined(args_pe)
-#define args_pe perr
-#endif
 #ifndef args_pe
+#if ARGS_PRINT_H
+#define args_pe perr
+#else /* Default */
 /** @ingroup args_customizable
  * @brief Error print.
  * @remark Overridable before including @ref args.h.
  */
 #define args_pe(...) fprintf(stderr, __VA_ARGS__)
-#endif
+#endif /* ARGS_PRINT_H */
+#endif /* args_pe */
 
 #ifndef NDEBUG /* DEBUG */
-#if defined(ARGS_PRINT_H) && !defined(args_pd)
-#define args_pd pdev
-#endif
 #ifndef args_pd
+#if ARGS_PRINT_H
+#define args_pd pdev
+#else /* Default */
 /** @ingroup args_customizable
  * @brief Developer-only debug print.
  * @note Only available when NDEBUG is not defined
  * @remark Overridable before including @ref args.h.
  */
 #define args_pd(...) fprintf(stderr, __VA_ARGS__)
-#endif
+#endif /* ARGS_PRINT_H */
+#endif /* args_pd */
 #else /* RELEASE */
-#ifdef args_pd
 #undef args_pd
-#endif
 #define args_pd(...)
 #endif /* NDEBUG */
 
-#if defined(ARGS_PRINT_H) && !defined(args_pi)
-#define args_pi(arg) perr("Internal error for %s", arg_str(arg))
-#endif
 #ifndef args_pi
+#if ARGS_PRINT_H
+#define args_pi(arg) perr("Internal error for %s", arg_str(arg))
+#else /* Default */
 /** @ingroup args_customizable
  * @brief Internal error print, user-facing dev print.
  * @remark Overridable before including @ref args.h.
  */
 #define args_pi(arg) args_pe("Internal error for %s", arg_str(arg))
-#endif
+#endif /* ARGS_PRINT_H */
+#endif /* args_pi */
 
-#if defined(ARGS_PRINT_H) && !defined(args_abort)
-#define args_abort pabort
-#endif
 #ifndef args_abort
+#if ARGS_PRINT_H
+#define args_abort pabort
+#else /* Default */
 /** @ingroup args_customizable
  * @brief Abort function.
  * @remark Overridable before including @ref args.h.
  */
 #define args_abort() abort()
-#endif
+#endif /* ARGS_PRINT_H */
+#endif /* args_abort */
 
 #ifndef ARGS_IMPLICIT_SETS
 /** @ingroup args_customizable
