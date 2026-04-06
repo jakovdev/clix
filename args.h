@@ -1562,6 +1562,35 @@ static bool arg_process(struct argument *a, const char *str)
 	return true;
 }
 
+static bool arg_option(const char *token)
+{
+	if (!token || token[0] != '-' || token[1] == '\0')
+		return false;
+
+	if (strcmp(token, "--") == 0)
+		return true;
+
+	if (token[1] == '-') {
+		const char *name = token + 2;
+		const char *eq = strchr(name, '=');
+		size_t name_len = eq ? (size_t)(eq - name) : strlen(name);
+		for_each_arg(c, args) {
+			if (c->lopt && strncmp(c->lopt, name, name_len) == 0 &&
+			    c->lopt[name_len] == '\0')
+				return true;
+		}
+
+		return false;
+	}
+
+	for_each_arg(c, args) {
+		if (c->opt && c->opt == token[1])
+			return true;
+	}
+
+	return false;
+}
+
 static bool arg_parse_lopt(int *i)
 {
 	char *arg = argr.v[*i];
@@ -1598,6 +1627,8 @@ static bool arg_parse_lopt(int *i)
 	} else if (a->param_req == ARG_PARAM_OPTIONAL) {
 		if (value)
 			str = value;
+		else if (*i + 1 < argr.c && !arg_option(argr.v[*i + 1]))
+			str = argr.v[++(*i)];
 	} else {
 		if (value) {
 			args_pe("--%s does not take a parameter", a->lopt);
