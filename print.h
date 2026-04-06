@@ -87,8 +87,8 @@
  * print_stream_err(stderr);
  */
 
-#ifndef PRINT_H
-#define PRINT_H
+#ifndef PRINT_H_
+#define PRINT_H_
 
 #include <stddef.h>
 #include <stdio.h>
@@ -227,7 +227,7 @@ extern bool print_nodetail;
 #endif
 
 #undef P_RESTRICT
-#endif /* PRINT_H */
+#endif /* PRINT_H_ */
 #if defined(PRINT_IMPLEMENTATION) && !defined(_PRINT_IMPLEMENTED)
 #define _PRINT_IMPLEMENTED
 

@@ -101,8 +101,8 @@
  * @endif
  */
 
-#ifndef ARGS_H
-#define ARGS_H
+#ifndef ARGS_H_
+#define ARGS_H_
 
 #include <errno.h>
 #include <stdbool.h>
@@ -985,7 +985,7 @@ void _args_register(struct argument *);
 
 /** @endcond */
 
-#endif /* ARGS_H */
+#endif /* ARGS_H_ */
 #if defined(ARGS_IMPLEMENTATION) && !defined(_ARGS_IMPLEMENTED)
 #define _ARGS_IMPLEMENTED
 
@@ -1029,24 +1029,24 @@ void _args_register(struct argument *);
 #error ARGS_HELP_OFFSET must be at least 1 for proper formatting
 #endif
 
-#ifndef ARGS_PRINT_H
+#ifndef ARGS_PRINT_H_
 /** @ingroup args_customizable
  * @brief Allow using print.h functions for args_pe, args_pd, args_pi and args_abort.
- * @remark Define @ref ARGS_PRINT_H and include @ref print.h before including @ref args.h.
+ * @remark Define @ref ARGS_PRINT_H_ and include @ref print.h before including @ref args.h.
  * @hideinitializer
  */
-#define ARGS_PRINT_H 0
+#define ARGS_PRINT_H_ 0
 #else
-#ifndef PRINT_H
+#ifndef PRINT_H_
 #error "Include print.h before including args.h"
-#endif /* PRINT_H */
-#undef ARGS_PRINT_H
-#define ARGS_PRINT_H 1
-#endif /* ARGS_PRINT_H */
+#endif /* PRINT_H_ */
+#undef ARGS_PRINT_H_
+#define ARGS_PRINT_H_ 1
+#endif /* ARGS_PRINT_H_ */
 
 #ifndef args_po
 /* Disabled for now 
-#if ARGS_PRINT_H
+#if ARGS_PRINT_H_
 #define args_po print
 #else Default */
 /** @ingroup args_customizable
@@ -1054,7 +1054,7 @@ void _args_register(struct argument *);
  * @remark Overridable before including @ref args.h.
  */
 #define args_po(...) printf(__VA_ARGS__)
-/* #endif ARGS_PRINT_H */
+/* #endif ARGS_PRINT_H_ */
 #endif /* args_po */
 
 /** @} */
@@ -1062,7 +1062,7 @@ void _args_register(struct argument *);
 /** @{ */
 
 #ifndef args_pe
-#if ARGS_PRINT_H
+#if ARGS_PRINT_H_
 #define args_pe perr
 #else /* Default */
 /** @ingroup args_customizable
@@ -1070,12 +1070,12 @@ void _args_register(struct argument *);
  * @remark Overridable before including @ref args.h.
  */
 #define args_pe(...) fprintf(stderr, __VA_ARGS__)
-#endif /* ARGS_PRINT_H */
+#endif /* ARGS_PRINT_H_ */
 #endif /* args_pe */
 
 #ifndef NDEBUG /* DEBUG */
 #ifndef args_pd
-#if ARGS_PRINT_H
+#if ARGS_PRINT_H_
 #define args_pd pdev
 #else /* Default */
 /** @ingroup args_customizable
@@ -1084,7 +1084,7 @@ void _args_register(struct argument *);
  * @remark Overridable before including @ref args.h.
  */
 #define args_pd(...) fprintf(stderr, __VA_ARGS__)
-#endif /* ARGS_PRINT_H */
+#endif /* ARGS_PRINT_H_ */
 #endif /* args_pd */
 #else /* RELEASE */
 #undef args_pd
@@ -1092,7 +1092,7 @@ void _args_register(struct argument *);
 #endif /* NDEBUG */
 
 #ifndef args_pi
-#if ARGS_PRINT_H
+#if ARGS_PRINT_H_
 #define args_pi(arg) perr("Internal error for %s", arg_str(arg))
 #else /* Default */
 /** @ingroup args_customizable
@@ -1100,11 +1100,11 @@ void _args_register(struct argument *);
  * @remark Overridable before including @ref args.h.
  */
 #define args_pi(arg) args_pe("Internal error for %s", arg_str(arg))
-#endif /* ARGS_PRINT_H */
+#endif /* ARGS_PRINT_H_ */
 #endif /* args_pi */
 
 #ifndef args_abort
-#if ARGS_PRINT_H
+#if ARGS_PRINT_H_
 #define args_abort pabort
 #else /* Default */
 /** @ingroup args_customizable
@@ -1112,7 +1112,7 @@ void _args_register(struct argument *);
  * @remark Overridable before including @ref args.h.
  */
 #define args_abort() abort()
-#endif /* ARGS_PRINT_H */
+#endif /* ARGS_PRINT_H_ */
 #endif /* args_abort */
 
 #ifndef ARGS_IMPLICIT_SETS
