@@ -44,7 +44,7 @@
  * │ ▶ Storing numbers [■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■········]  86% │
  * 
  * Interactive prompt with choices
- * char *choices[] = {"hello", "second", NULL};
+ * char *choices[] = {"hello", "second"};
  * int selected = pchoice_s(choices, "Enter column number");
  * │ 1: hello                                                                     │
  * │ 2: second                                                                    │
@@ -226,23 +226,9 @@ extern bool print_quiet;
 extern bool print_nodetail;
 #endif
 
-#undef P_RESTRICT
 #endif /* PRINT_H_ */
 #if defined(PRINT_IMPLEMENTATION) && !defined(_PRINT_IMPLEMENTED)
 #define _PRINT_IMPLEMENTED
-
-#ifdef __cplusplus
-#if defined(_MSC_VER) && !defined(__clang__)
-#define P_RESTRICT __restrict
-#else /* G++, Clang++ */
-#define P_RESTRICT __restrict__
-#endif /* MSVC C++ */
-#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-#define P_RESTRICT restrict
-#else
-/* While restrict is optional, snprintf and vsnprintf are required */
-#error "Please compile with C99 or later standard"
-#endif
 
 #include <errno.h>
 #include <limits.h>
@@ -624,14 +610,13 @@ bool print_yn(const char *P_RESTRICT prompt)
 		return true;
 
 	char result[2] = { 0 };
-repeat:
-	pinput_s(result, "%s [y/n]", prompt);
-	if (result[0] == 'y' || result[0] == 'Y')
-		return true;
-	else if (result[0] == 'n' || result[0] == 'N')
-		return false;
-
-	goto repeat;
+	while (1) {
+		pinput_s(result, "%s [y/n]", prompt);
+		if (result[0] == 'y' || result[0] == 'Y')
+			return true;
+		else if (result[0] == 'n' || result[0] == 'N')
+			return false;
+	}
 }
 
 #define ouputc(c) fputc_unlocked((c), out)
@@ -1061,8 +1046,6 @@ enum p_return input(P_INPUT in, size_t size, const char *P_RESTRICT fmt, ...)
 			return PRINT_CHOICE_COLLECTION_SHOULD_CONTAIN_2_OR_MORE_CHOICES__ERROR;
 		}
 
-		choices[c_count] = NULL;
-
 		size_t c;
 		for (c = 0; c < c_count; c++) {
 			if (simple) {
@@ -1193,9 +1176,8 @@ enum p_return input(P_INPUT in, size_t size, const char *P_RESTRICT fmt, ...)
 	return PRINT_SUCCESS;
 }
 
-#undef P_RESTRICT
-
 #endif /* PRINT_IMPLEMENTATION */
+#undef P_RESTRICT
 
 /*
 print.h
