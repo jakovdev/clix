@@ -42,9 +42,7 @@
  *         for (int j = 0; j < cols; j++) {
  *             process_matrix_cell(i, j);
  *         }
- *         // items_per_row depends on the inner loop
- *         const s64 items_per_row = cols;
- *         progress_add(items_per_row);
+ *         progress_add(cols);
  *     }
  *     progress_flush();
  * }
@@ -108,7 +106,7 @@ void progress_flush(void);
  * Must be called from the main thread after all parallel work completes.
  * May be slightly delayed due to mutex contention.
  */
-bool progress_end(void);
+void progress_end(void);
 
 #ifdef PROGRESS_EXTERN_DISABLE
 extern bool progress_disable;
@@ -120,6 +118,7 @@ extern bool progress_disable;
 
 #include <stdalign.h>
 #include <stdatomic.h>
+#include <time.h>
 #include <threads.h>
 
 #ifndef PROGRESS_PRINT_H
@@ -135,30 +134,13 @@ extern bool progress_disable;
 
 #ifndef progress_bar
 #if !PROGRESS_PRINT_H
-#define progress_bar(pct, ...)           \
-	do {                             \
-		printf("\r%3d%% ", pct); \
-		printf(__VA_ARGS__);     \
-		fflush(stdout);          \
+#define progress_bar(pct, msg)                 \
+	do {                                   \
+		printf("\r%s %d%%", msg, pct); \
+		fflush(stdout);                \
 	} while (0)
 #endif /* progress_bar is a function */
 #endif /* progress_bar */
-
-#ifndef progress_err
-#if PROGRESS_PRINT_H
-#define progress_err(...) perr(__VA_ARGS__)
-#else /* Default */
-#define progress_err(...) fprintf(stderr, __VA_ARGS__)
-#endif /* PROGRESS_PRINT_H */
-#endif /* progress_err */
-
-#ifndef progress_dev
-#if PROGRESS_PRINT_H
-#define progress_dev(...) pdev(__VA_ARGS__)
-#else /* Default */
-#define progress_dev(...) fprintf(stderr, __VA_ARGS__)
-#endif /* PROGRESS_PRINT_H */
-#endif /* progress_dev */
 
 static _Thread_local size_t t_done;
 
@@ -178,14 +160,14 @@ static cnd_t p_cond;
 static int p_monitor(void *arg)
 {
 	(void)arg;
-	progress_bar(0, "%s", p_message);
+	progress_bar(0, p_message);
 
 	struct timespec timeout;
 
 	size_t current = 0;
 	while (atomic_load_explicit(&p_running, memory_order_acquire)) {
 		current = atomic_load_explicit(&p_done, memory_order_relaxed);
-		progress_bar((int)(100 * current / p_total), "%s", p_message);
+		progress_bar((int)(100 * current / p_total), p_message);
 
 		if (timespec_get(&timeout, TIME_UTC) == 0) {
 			timeout.tv_sec = 0;
@@ -202,7 +184,7 @@ static int p_monitor(void *arg)
 		mtx_unlock(&p_mutex);
 	}
 
-	progress_bar(100, "%s", p_message);
+	progress_bar(100, p_message);
 	return thrd_success;
 }
 
@@ -212,10 +194,12 @@ bool progress_start(size_t total, int threads, const char *message)
 		return true;
 
 	if (atomic_load_explicit(&p_running, memory_order_relaxed))
-		goto p_monitor_running_error;
+		return false;
+	if (mtx_init(&p_mutex, mtx_plain) != thrd_success)
+		return false;
+	if (cnd_init(&p_cond) != thrd_success)
+		goto p_monitor_cnd_error;
 
-	atomic_store_explicit(&p_running, true, memory_order_relaxed);
-	atomic_store_explicit(&p_done, 0, memory_order_relaxed);
 	p_message = message;
 	p_total = total;
 	if (!p_total)
@@ -224,21 +208,16 @@ bool progress_start(size_t total, int threads, const char *message)
 	if (!p_update_limit)
 		p_update_limit = 1;
 
-	if (mtx_init(&p_mutex, mtx_plain) != thrd_success)
-		goto p_monitor_mtx_error;
-	if (cnd_init(&p_cond) != thrd_success)
-		goto p_monitor_cnd_error;
+	atomic_store_explicit(&p_done, 0, memory_order_relaxed);
+	atomic_store_explicit(&p_running, true, memory_order_relaxed);
 
 	if (thrd_create(&p_monitor_thrd, p_monitor, NULL) == thrd_success)
 		return true;
 
+	atomic_store_explicit(&p_running, false, memory_order_relaxed);
 	cnd_destroy(&p_cond);
 p_monitor_cnd_error:
 	mtx_destroy(&p_mutex);
-p_monitor_mtx_error:
-	atomic_store_explicit(&p_running, false, memory_order_relaxed);
-p_monitor_running_error:
-	progress_err("Failed to create a progress bar display");
 	return false;
 }
 
@@ -259,16 +238,12 @@ void progress_add(size_t amount)
 	progress_flush();
 }
 
-bool progress_end(void)
+void progress_end(void)
 {
 	if (progress_disable)
-		return true;
-
-	if (!atomic_load_explicit(&p_running, memory_order_relaxed)) {
-		progress_dev("Tried to end non-running progress monitor");
-		progress_err("Internal error during progress bar display");
-		return false;
-	}
+		return;
+	if (!atomic_load_explicit(&p_running, memory_order_relaxed))
+		return;
 
 	progress_flush();
 	atomic_store_explicit(&p_done, p_total, memory_order_relaxed);
@@ -277,7 +252,6 @@ bool progress_end(void)
 	thrd_join(p_monitor_thrd, NULL);
 	cnd_destroy(&p_cond);
 	mtx_destroy(&p_mutex);
-	return true;
 }
 
 #endif /* PROGRESS_IMPLEMENTATION */
