@@ -6,8 +6,8 @@ Single-header file CLI libraries for C
 
 ## The list:
 - [args.h](https://www.github.com/jakovdev/clix/blob/main/args.h) - Decentralized CLI argument framework.
-- [print.h](https://www.github.com/jakovdev/clix/blob/main/print.h) - WIP
-- [progress.h](https://www.github.com/jakovdev/clix/blob/main/progress.h) - WIP
+- ~~[print.h](https://www.github.com/jakovdev/clix/blob/main/print.h) - WIP~~
+- [progress.h](https://www.github.com/jakovdev/clix/blob/main/progress.h) - Progress bar display for parallel workloads.
 
 ## How to Use
 
