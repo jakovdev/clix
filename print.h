@@ -725,6 +725,7 @@ enum p_return print(const char *P_RESTRICT fmt, ...)
 		va_end(v_args);
 
 		if (p_bufsiz < 0) {
+			oflush();
 			pdev("Failed to format print string");
 			return PRINT_INVALID_FORMAT_ARGS__ERROR;
 		}
@@ -735,6 +736,7 @@ skip_fmt:
 	const size_t available = p.width - 3 - (!PICO(type) ? 0 : 2);
 	size_t p_buflen = min((size_t)p_bufsiz, sizeof(p_buf) - 1);
 	if (p_buflen > available) { /* Overflow, no box/icon/color then */
+		oflush();
 		pdev("Print string too long, doing a simple print");
 		simple = true;
 	}
@@ -1062,6 +1064,7 @@ enum p_return input(P_INPUT in, size_t size, const char *P_RESTRICT fmt, ...)
 		va_end(v_args);
 
 		if (p_bufsiz < 0) {
+			oflush();
 			pdev("Failed to format input string");
 			return PRINT_INVALID_FORMAT_ARGS__ERROR;
 		}
@@ -1071,6 +1074,7 @@ enum p_return input(P_INPUT in, size_t size, const char *P_RESTRICT fmt, ...)
 	const size_t available = p.width - 3 - (!PICO(type) ? 0 : 2);
 	size_t p_buflen = min((size_t)p_bufsiz, sizeof(p_buf) - 1);
 	if (p_buflen > available) {
+		oflush();
 		pdev("Input string too long, doing a simple print");
 		simple = true;
 	}
@@ -1080,6 +1084,7 @@ enum p_return input(P_INPUT in, size_t size, const char *P_RESTRICT fmt, ...)
 		size_t c_count = size;
 
 		if (c_count < 2) {
+			oflush();
 			pdev("Not enough choices (<2)");
 			return PRINT_CHOICE_COLLECTION_SHOULD_CONTAIN_2_OR_MORE_CHOICES__ERROR;
 		}
@@ -1174,6 +1179,7 @@ enum p_return input(P_INPUT in, size_t size, const char *P_RESTRICT fmt, ...)
 		char *result = in.output;
 		const size_t rsz = size;
 		if (rsz < 2) {
+			oflush();
 			pdev("Output buffer size is too small");
 			return PRINT_PROMPT_BUFFER_SIZE_SHOULD_BE_2_OR_MORE__ERROR;
 		}
