@@ -95,13 +95,17 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-typedef const union _P_INPUT {
-	const char **choices;
-#define P_INPUT_C(c, n) (P_INPUT){ .choices = c }, n, P_CHOICE
-#define P_INPUT_CS(choices) P_INPUT_C(choices, sizeof(choices))
-	char *output;
-#define P_INPUT_P(out, size) (P_INPUT){ .output = (out) }, size, P_PROMPT
+typedef struct _P_INPUT {
+#define _P_IN(E, s) ((P_INPUT){ .u = { .E }, .size = (s) })
+	union _P_INPUT_UNION {
+		const char **choices;
+#define P_INPUT_C(c, n) _P_IN(choices = (c), n), P_CHOICE
+#define P_INPUT_CS(c) P_INPUT_C(c, sizeof(c) / sizeof((c)[0]))
+		char *output;
+#define P_INPUT_P(out, size) _P_IN(output = (out), size), P_PROMPT
 #define P_INPUT_PS(out) P_INPUT_P(out, sizeof(out))
+	} u;
+	size_t size;
 } P_INPUT;
 
 /* clang-format off */
@@ -145,7 +149,7 @@ void print_stream_err(FILE *);
 
 enum p_return print(const char *P_RESTRICT, ...);
 enum p_return progress_bar(int percent, const char *P_RESTRICT, ...);
-enum p_return input(P_INPUT, size_t, const char *P_RESTRICT, ...);
+enum p_return input(P_INPUT, const char *P_RESTRICT, ...);
 
 /* "prompt [y/N]: " */
 bool print_yN(const char *P_RESTRICT);
@@ -1017,7 +1021,7 @@ cleanup:
 	return PRINT_SUCCESS;
 }
 
-enum p_return input(P_INPUT in, size_t size, const char *P_RESTRICT fmt, ...)
+enum p_return input(P_INPUT in, const char *P_RESTRICT fmt, ...)
 {
 	if (!is_init)
 		print_init();
@@ -1080,8 +1084,8 @@ enum p_return input(P_INPUT in, size_t size, const char *P_RESTRICT fmt, ...)
 	}
 
 	if (type == T_CHOICE) {
-		const char **choices = in.choices;
-		size_t c_count = size;
+		const char **choices = in.u.choices;
+		size_t c_count = in.size;
 
 		if (c_count < 2) {
 			oflush();
@@ -1176,8 +1180,8 @@ enum p_return input(P_INPUT in, size_t size, const char *P_RESTRICT fmt, ...)
 			      c_count);
 		} while (1);
 	} else if (type == T_PROMPT) {
-		char *result = in.output;
-		const size_t rsz = size;
+		char *result = in.u.output;
+		const size_t rsz = in.size;
 		if (rsz < 2) {
 			oflush();
 			pdev("Output buffer size is too small");
