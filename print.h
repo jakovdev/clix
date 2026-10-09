@@ -242,6 +242,7 @@ extern bool print_nodetail;
 #pragma comment(lib, "user32.lib")
 #endif
 #include <windows.h>
+#include <fcntl.h>
 #ifdef PRINT_UNDEF_WIN32_LEAN_AND_MEAN
 #undef WIN32_LEAN_AND_MEAN
 #undef PRINT_UNDEF_WIN32_LEAN_AND_MEAN
@@ -359,6 +360,10 @@ static void terminal_init(void)
 #endif
 }
 
+#ifdef _WIN32
+static int _win_input_mode_old;
+#endif
+
 static void terminal_mode_raw(void)
 {
 #ifdef _WIN32
@@ -366,7 +371,7 @@ static void terminal_mode_raw(void)
 	DWORD mode, mask = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
 	if (GetConsoleMode(hStdin, &mode))
 		SetConsoleMode(hStdin, mode & ~mask);
-
+	_win_input_mode_old = _setmode(_fileno(p.in), _O_BINARY);
 #else
 	struct termios term;
 	tcgetattr(STDIN_FILENO, &term);
@@ -378,6 +383,8 @@ static void terminal_mode_raw(void)
 static void terminal_mode_restore(void)
 {
 #ifdef _WIN32
+	if (_win_input_mode_old != -1)
+		_setmode(_fileno(p.in), _win_input_mode_old);
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	DWORD mode;
 	GetConsoleMode(hStdin, &mode);
@@ -566,7 +573,7 @@ static void terminal_read_input(char *buf, size_t buf_sz)
 	terminal_mode_raw();
 
 	size_t i = 0;
-	for (int c; (c = fgetc(p.in)) != EOF && c != '\n';) {
+	for (int c; (c = fgetc(p.in)) != EOF && c != '\n' && c != '\r';) {
 		if (c == '\b' || c == 0x7F) {
 			if (i) {
 				while (i && ((buf[i - 1] & 0xC0) == 0x80))
