@@ -11,24 +11,24 @@
 
 /* REQUIRED: C99 or later */
 /* BASIC USAGE:
- * 
+ *
  * pheader("Header text");
  * ╔══════════════════════════════════════════════════════════════════════════════╗
  * ║                                 Header text                                  ║
  * ╚══════════════════════════════════════════════════════════════════════════════╝
- * 
+ *
  * psection("Setup");
  * ┌─────────────────────────────────── Setup ────────────────────────────────────┐
- * 
+ *
  * Automatically formats the string like printf
  * const char *input_file = "input.csv";
  * pinfo("Reading input file: %s", input_file);
  * │ • Reading input file: input.csv                                              │
- * 
+ *
  * Only prints if verbose mode is enabled
  * pverb("Batch size: %zu tasks per batch", batch_size);
  * │ · Batch size: 6163 tasks per batch                                           │
- * 
+ *
  * Specify location for simple hierarchy
  * pinfo("Input: %s", input_file);
  * pinfom("Output: %s", output_file);
@@ -36,13 +36,13 @@
  * │ • Input: in.csv                                                              │
  * │ ├ Output: out.h5                                                             │
  * │ └ Compression: 0                                                             │
- * 
+ *
  * Progress bar display, has quick return for repeats, draws over empty boxes
  * int numbers = 1000;
  * for (int i = 0; i < numbers; i++)
  *     pproport(i / numbers, "Storing numbers");
  * │ ▶ Storing numbers [■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■········]  86% │
- * 
+ *
  * Interactive prompt with choices
  * char *choices[] = {"hello", "second"};
  * int selected = pchoice_s(choices, "Enter column number");
@@ -51,36 +51,36 @@
  * │ • Enter column number (1-2): 4                                               │
  * │ ! Invalid input! Please enter a number between 1 and 2.                      │
  * If valid returns zero-based index of selected choice, invalid prints choices again
- * 
+ *
  * pwarn("Warning text");
  * │ ! Warning text                                                               │
- * 
+ *
  * perr("File not found");
  * │ ✗ File not found                                                             │
- * 
+ *
  * For getting user input
  * char result[16] = { 0 };
  * pinput_s(result, "Enter a character: ");
  * │ • Enter a character: hello                                                   │
  * result will now contain "hello"
- * 
+ *
  * Quick y/N prompt (also has Y/n and y/n variants)
  * bool answer = print_yN("Do you want to continue?");
  * │ • Do you want to continue? [y/N]: y                                          │
  * answer will be true (yes) or false (no)
- * 
+ *
  * pdev("Error %d", value);
  * │ ✗ _TO_DEV_: Error 42                                                         │
  * Is perr() only in Debug builds (NDEBUG not defined), adds "_TO_DEV_ :" to string
- * 
+ *
  * Close section (automatic on new section/header or non-abort exit)
  * psection_end();
  * └──────────────────────────────────────────────────────────────────────────────┘
- * 
+ *
  * For starting section with no text
  * psection();
  * ┌──────────────────────────────────────────────────────────────────────────────┐
- * 
+ *
  * Also available:
  * print_stream_in(stdin);
  * print_stream_out(stdout);
@@ -119,11 +119,10 @@ typedef const union _P_INPUT {
 
 /* Useful for debugging */
 enum p_return {
-	/* All fields are customizable for easier debugging or if checks */
 	PRINT_SUCCESS = 0,
 	PRINT_SKIPPED_BECAUSE_QUIET_OR_VERBOSE_NOT_ENABLED__SUCCESS = 0,
 	PRINT_REPEAT_PROGRESS_PERCENT__SUCCESS = 0,
-	PRINT_FIRST_CHOICE_INDEX__SUCCESS = 0, /* Editable first choice index */
+	PRINT_FIRST_CHOICE_INDEX__SUCCESS = 0,
 	PRINT_INVALID_FORMAT_ARGS__ERROR = -1,
 	PRINT_CHOICE_COLLECTION_SHOULD_CONTAIN_2_OR_MORE_CHOICES__ERROR = -2,
 	PRINT_PROMPT_BUFFER_SIZE_SHOULD_BE_2_OR_MORE__ERROR = -2,
