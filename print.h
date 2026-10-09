@@ -241,6 +241,7 @@ extern bool print_nodetail;
 #pragma comment(lib, "user32.lib")
 #endif
 #include <windows.h>
+#include <io.h>
 #include <fcntl.h>
 #ifdef PRINT_UNDEF_WIN32_LEAN_AND_MEAN
 #undef WIN32_LEAN_AND_MEAN
@@ -461,18 +462,6 @@ static struct {
 	const char progress_empty_char[sizeof("·")];
 	char ansi_carriage_return[sizeof("\r")];
 } p = {
-    .map = {
-        [T_NONE]     = { COLOR_RESET,       ICON_NONE,    false },
-        [T_INFO]     = { COLOR_BLUE,        ICON_INFO,    false },
-        [T_VERBOSE]  = { COLOR_GRAY,        ICON_DOT,     true  },
-        [T_WARNING]  = { COLOR_YELLOW,      ICON_WARNING, true  },
-        [T_ERROR]    = { COLOR_RED,         ICON_ERROR,   true  },
-        [T_HEADER]   = { COLOR_BRIGHT_CYAN, ICON_NONE,    false },
-        [T_SECTION]  = { COLOR_CYAN,        ICON_NONE,    false },
-        [T_CHOICE]   = { COLOR_BLUE,        ICON_INFO,    true  },
-        [T_PROMPT]   = { COLOR_BLUE,        ICON_INFO,    true  },
-        [T_PROGRESS] = { COLOR_BLUE,        ICON_ARROW,   false },
-    },
 #define PCOL(t) p.map[(t)].color
 #define PCOLSIZ(t) (PCOL(t) <= COLOR_UNDER ? 4 : 5)
     .codes = {
@@ -497,6 +486,22 @@ static struct {
         [ICON_ERROR]   = "✗",
         [ICON_ARROW]   = "▶",
     },
+    .in = NULL,
+    .out = NULL,
+    .err = NULL,
+    .width = PRINT_TERMINAL_WIDTH,
+    .map = {
+        [T_NONE]     = { COLOR_RESET,       ICON_NONE,    false },
+        [T_INFO]     = { COLOR_BLUE,        ICON_INFO,    false },
+        [T_VERBOSE]  = { COLOR_GRAY,        ICON_DOT,     true  },
+        [T_WARNING]  = { COLOR_YELLOW,      ICON_WARNING, true  },
+        [T_ERROR]    = { COLOR_RED,         ICON_ERROR,   true  },
+        [T_HEADER]   = { COLOR_BRIGHT_CYAN, ICON_NONE,    false },
+        [T_SECTION]  = { COLOR_CYAN,        ICON_NONE,    false },
+        [T_CHOICE]   = { COLOR_BLUE,        ICON_INFO,    true  },
+        [T_PROMPT]   = { COLOR_BLUE,        ICON_INFO,    true  },
+        [T_PROGRESS] = { COLOR_BLUE,        ICON_ARROW,   false },
+    },
 #define BOXSIZ (sizeof(p.boxes[BOX_NORMAL][0]) - 1)
     .boxes = {
         { "┌", "├", "└", "┐", "─", "│", "┤", "┘" },
@@ -505,7 +510,6 @@ static struct {
     .progress_filled_char = "■",
     .progress_empty_char = "·",
     .ansi_carriage_return = "\r",
-    .width = PRINT_TERMINAL_WIDTH,
 };
 
 static bool print_force;
@@ -931,12 +935,15 @@ enum p_return progress_bar(int percent, const char *P_RESTRICT fmt, ...)
 	bool simple = print_nodetail;
 	const size_t available = p.width - 3 - (!PICO(T_PROGRESS) ? 0 : 2);
 	size_t p_buflen = min((size_t)p_bufsiz, sizeof(p_buf) - 1);
-	if (p_buflen > available) {
+	const int digits = p_percent < 10 ? 1 : (p_percent < 100 ? 2 : 3);
+	const size_t meta_width = (size_t)digits + 2 + 1 + 1 + 1;
+	if (p_buflen + meta_width + 1 > available) {
 		pdev("Progress bar string too long, doing a simple print");
 		simple = true;
 	}
-
-	const int digits = p_percent < 10 ? 1 : (p_percent < 100 ? 2 : 3);
+	const size_t bar_width = available - p_buflen - meta_width - 1;
+	const size_t filled_width = bar_width * (size_t)p_percent / 100;
+	const size_t empty_width = bar_width - filled_width;
 
 	if (simple) {
 		if (in_section)
@@ -956,11 +963,6 @@ enum p_return progress_bar(int percent, const char *P_RESTRICT fmt, ...)
 		content_printed = true;
 		goto cleanup;
 	}
-
-	const size_t meta_width = (size_t)digits + 2 + 1 + 1 + 1;
-	const size_t bar_width = available - p_buflen - meta_width - 1;
-	const size_t filled_width = bar_width * (size_t)p_percent / 100;
-	const size_t empty_width = bar_width - filled_width;
 
 	if (in_section)
 		ouwrite(p.ansi_carriage_return, 1);
@@ -1159,8 +1161,9 @@ enum p_return input(P_INPUT in, size_t size, const char *P_RESTRICT fmt, ...)
 				fwrite(content, 1, content_len, out);
 				fflush(out);
 				content_printed = true;
-				return (int)selected - 1 +
-				       PRINT_FIRST_CHOICE_INDEX__SUCCESS;
+				return (enum p_return)(
+					PRINT_FIRST_CHOICE_INDEX__SUCCESS +
+					selected - 1);
 			}
 
 			oflush();
