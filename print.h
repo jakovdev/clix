@@ -184,8 +184,8 @@ bool print_yn(const char *P_RESTRICT);
 #define pinput_s(out, ...) input(P_INPUT_PS(out) __VA_ARGS__)
 
 #define ppercent(pct, ...) progress_bar(pct, __VA_ARGS__)
-#define pproport(prp, ...) progress_bar((100 * prp), __VA_ARGS__)
-#define pproportc(prp, ...) progress_bar((int)(100 * prp), __VA_ARGS__)
+#define pproport(n, d, ...) progress_bar((100 * (n) / (d)), __VA_ARGS__)
+#define pproportc(n, d, ...) progress_bar((int)(100 * (n) / (d)), __VA_ARGS__)
 
 #define pheader(...) print(P_HEADER __VA_ARGS__)
 
